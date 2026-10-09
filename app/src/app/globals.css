@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@import "@fontsource/inter/index.css";
+@import "@fontsource/inter/800.css";
+@import "@fontsource/inter/900.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/400.css";
+
+:root {
+  --bg: 0 0% 100%;
+  --fg: 222 47% 11%;
+  --p: 158 72% 38%;
+  --p-fg: 0 0% 100%;
+  --muted: 210 40% 96.1%;
+  --border: 214.3 31.8% 91.4%;
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.08);
+  --card-text: #0b0b12;
+}
+
+.dark {
+  --bg: 0 0% 0%;
+  --fg: 210 40% 98%;
+  --p: 158 68% 46%;
+  --p-fg: 222 47% 7%;
+  --muted: 0 0% 7%;
+  --border: 0 0% 12%;
+  --card-bg: rgba(20, 16, 40, 0.55);
+  --card-border: rgba(255, 255, 255, 0.12);
+  --card-text: #ecE8ff;
+}
+
+@theme {
+  --color-background: hsl(var(--bg));
+  --color-foreground: hsl(var(--fg));
+  --color-primary: hsl(var(--p));
+  --color-primary-foreground: hsl(var(--p-fg));
+  --color-muted: hsl(var(--muted));
+  --color-border: hsl(var(--border));
+  --color-card-bg: hsl(var(--card-bg));
+  --color-card-border: hsl(var(--card-border))
+}
+
+body {
+  font-family:
+    "Inter",
+    -apple-system,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+a {
+  cursor: pointer;
+}
+
+nav {
+  list-style: none;
+}
+textarea::-webkit-resizer {
+  display: none !important;
+  background: none !important;
+  -webkit-appearance: none !important;
+}

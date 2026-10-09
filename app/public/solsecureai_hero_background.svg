@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#030611"/>
+      <stop offset="42%" stop-color="#07091a"/>
+      <stop offset="72%" stop-color="#0a1020"/>
+      <stop offset="100%" stop-color="#05181a"/>
+    </linearGradient>
+
+    <radialGradient id="glowCyan" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#28ffd8" stop-opacity="0.9"/>
+      <stop offset="35%" stop-color="#16d9ff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#16d9ff" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="glowPurple" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8e5cff" stop-opacity="0.8"/>
+      <stop offset="38%" stop-color="#6b39ff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#6b39ff" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6a55ff"/>
+      <stop offset="48%" stop-color="#35d8ff"/>
+      <stop offset="72%" stop-color="#29ffc0"/>
+      <stop offset="100%" stop-color="#7b5cff"/>
+    </linearGradient>
+
+    <linearGradient id="mountainGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#111729"/>
+      <stop offset="100%" stop-color="#03050c"/>
+    </linearGradient>
+
+    <linearGradient id="mountainGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="55%" stop-color="#101529"/>
+      <stop offset="100%" stop-color="#071319"/>
+    </linearGradient>
+
+    <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b1420" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#02040a"/>
+    </linearGradient>
+
+    <filter id="blur40"><feGaussianBlur stdDeviation="40"/></filter>
+    <filter id="blur20"><feGaussianBlur stdDeviation="20"/></filter>
+    <filter id="blur8"><feGaussianBlur stdDeviation="8"/></filter>
+
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M 56 0 L 0 0 0 56" fill="none" stroke="#91b6ff" stroke-opacity="0.07" stroke-width="1"/>
+    </pattern>
+
+    <clipPath id="floorClip">
+      <path d="M0,760 C420,720 760,730 1000,760 C1320,800 1600,810 1920,770 L1920,1080 L0,1080 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- background -->
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+
+  <!-- left negative-space vignette -->
+  <ellipse cx="350" cy="400" rx="620" ry="520" fill="#00030b" opacity="0.58"/>
+  <ellipse cx="250" cy="500" rx="540" ry="430" fill="#00040a" opacity="0.38"/>
+
+  <!-- ambient glows -->
+  <circle cx="1440" cy="350" r="330" fill="url(#glowCyan)" filter="url(#blur40)" opacity="0.65"/>
+  <circle cx="1240" cy="260" r="260" fill="url(#glowPurple)" filter="url(#blur40)" opacity="0.48"/>
+  <ellipse cx="1460" cy="820" rx="500" ry="160" fill="url(#glowCyan)" filter="url(#blur40)" opacity="0.28"/>
+  <ellipse cx="1120" cy="860" rx="430" ry="130" fill="url(#glowPurple)" filter="url(#blur40)" opacity="0.28"/>
+
+  <!-- stars -->
+  <g fill="#bfefff" opacity="0.75">
+    <circle cx="915" cy="110" r="1.4"/><circle cx="1120" cy="95" r="1.1"/><circle cx="1280" cy="130" r="1.5"/>
+    <circle cx="1450" cy="84" r="1.2"/><circle cx="1665" cy="160" r="1.5"/><circle cx="1770" cy="105" r="1.1"/>
+    <circle cx="1050" cy="180" r="1.1"/><circle cx="1530" cy="210" r="1.2"/><circle cx="1840" cy="220" r="1.1"/>
+  </g>
+
+  <!-- distant planet -->
+  <circle cx="1630" cy="205" r="93" fill="#0c1830"/>
+  <circle cx="1605" cy="180" r="58" fill="#172442" opacity="0.75"/>
+  <circle cx="1630" cy="205" r="93" fill="none" stroke="#5be8ff" stroke-opacity="0.16"/>
+
+  <!-- portal rings -->
+  <g transform="translate(1415 340)">
+    <ellipse rx="290" ry="110" fill="none" stroke="url(#ringGrad)" stroke-width="9" opacity="0.9" filter="url(#softGlow)"/>
+    <ellipse rx="240" ry="88" fill="none" stroke="#6bf8ff" stroke-width="2" opacity="0.55"/>
+    <ellipse rx="182" ry="68" fill="none" stroke="#a279ff" stroke-width="2" opacity="0.42"/>
+  </g>
+
+  <!-- luminous columns -->
+  <g opacity="0.68">
+    <rect x="1190" y="165" width="8" height="430" rx="4" fill="#20ffd0" filter="url(#blur8)"/>
+    <rect x="1250" y="128" width="5" height="500" rx="3" fill="#6755ff" filter="url(#blur8)"/>
+    <rect x="1315" y="92" width="7" height="560" rx="3" fill="#36ddff" filter="url(#blur8)"/>
+    <rect x="1385" y="120" width="5" height="510" rx="3" fill="#8d5bff" filter="url(#blur8)"/>
+    <rect x="1462" y="90" width="8" height="560" rx="4" fill="#25ffc8" filter="url(#blur8)"/>
+    <rect x="1532" y="135" width="5" height="500" rx="3" fill="#36d9ff" filter="url(#blur8)"/>
+    <rect x="1600" y="178" width="6" height="440" rx="3" fill="#8659ff" filter="url(#blur8)"/>
+  </g>
+
+  <!-- energy arcs -->
+  <path d="M1080,180 C1380,-40 1710,60 1970,305" fill="none" stroke="url(#ringGrad)" stroke-width="22" stroke-linecap="round" opacity="0.66" filter="url(#blur8)"/>
+  <path d="M1160,105 C1450,-35 1700,55 1905,225" fill="none" stroke="#82f7ff" stroke-width="4" opacity="0.8"/>
+  <path d="M1225,605 C1470,510 1680,500 1970,560" fill="none" stroke="url(#ringGrad)" stroke-width="11" opacity="0.62" filter="url(#softGlow)"/>
+  <path d="M1165,664 C1410,600 1630,610 1920,655" fill="none" stroke="#21ffd4" stroke-width="3" opacity="0.7"/>
+
+  <!-- mountains -->
+  <path d="M0,785 L160,720 L290,748 L420,610 L520,680 L640,600 L735,680 L830,625 L980,720 L1120,630 L1240,690 L1390,560 L1500,620 L1620,540 L1760,675 L1920,620 L1920,930 L0,930 Z"
+        fill="url(#mountainGrad)"/>
+  <path d="M630,790 L760,670 L860,715 L1000,650 L1110,705 L1220,620 L1340,710 L1440,600 L1560,700 L1680,625 L1920,700 L1920,940 L620,940 Z"
+        fill="url(#mountainGlow)" opacity="0.95"/>
+
+  <!-- mountain edge accents -->
+  <path d="M1030,700 L1120,630 L1240,690 L1390,560 L1500,620 L1620,540 L1760,675"
+        fill="none" stroke="#1fffd3" stroke-width="3" opacity="0.55" filter="url(#softGlow)"/>
+  <path d="M420,610 L520,680 L640,600 L735,680 L830,625"
+        fill="none" stroke="#7a57ff" stroke-width="3" opacity="0.45" filter="url(#softGlow)"/>
+
+  <!-- reflective floor -->
+  <g clip-path="url(#floorClip)">
+    <rect x="0" y="730" width="1920" height="350" fill="url(#floorGrad)"/>
+    <rect x="0" y="730" width="1920" height="350" fill="url(#grid)" opacity="0.35"/>
+    <ellipse cx="1445" cy="900" rx="520" ry="90" fill="#19ffd1" opacity="0.1" filter="url(#blur20)"/>
+    <ellipse cx="1160" cy="915" rx="380" ry="70" fill="#7b58ff" opacity="0.09" filter="url(#blur20)"/>
+
+    <path d="M980,790 C1240,840 1500,840 1920,790" fill="none" stroke="#2afee0" stroke-width="2" opacity="0.38"/>
+    <path d="M830,835 C1180,880 1560,890 1920,850" fill="none" stroke="#6d5cff" stroke-width="2" opacity="0.26"/>
+    <path d="M720,895 C1150,935 1520,945 1920,905" fill="none" stroke="#30d9ff" stroke-width="1.5" opacity="0.22"/>
+
+    <g opacity="0.22">
+      <rect x="1310" y="755" width="8" height="260" fill="#24ffd2"/>
+      <rect x="1375" y="760" width="5" height="230" fill="#7659ff"/>
+      <rect x="1460" y="752" width="7" height="270" fill="#30dfff"/>
+      <rect x="1540" y="760" width="5" height="235" fill="#24ffd2"/>
+    </g>
+  </g>
+
+  <!-- foreground side rocks -->
+  <path d="M0,820 L100,730 L210,760 L295,710 L390,760 L455,850 L380,970 L0,970 Z" fill="#03060c"/>
+  <path d="M1540,800 L1650,710 L1740,740 L1840,680 L1920,710 L1920,980 L1640,955 Z" fill="#02060a"/>
+
+  <!-- foreground glow points -->
+  <circle cx="1030" cy="790" r="10" fill="#7d5cff" filter="url(#softGlow)"/>
+  <circle cx="1560" cy="770" r="10" fill="#26ffd1" filter="url(#softGlow)"/>
+
+  <!-- subtle cyan frame accents -->
+  <path d="M980,120 L980,650" stroke="#21f5d6" stroke-width="2" opacity="0.18"/>
+  <path d="M1060,95 L1060,680" stroke="#725fff" stroke-width="2" opacity="0.15"/>
+
+  <!-- top vignette and bottom fade -->
+  <rect width="1920" height="250" fill="url(#bg)" opacity="0.18"/>
+  <rect y="930" width="1920" height="150" fill="#02040a" opacity="0.58"/>
+</svg>
