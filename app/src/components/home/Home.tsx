@@ -1,5 +1,8 @@
+import Coin3D from "../three/Coin3D";
 import CoinMetal from "../three/design";
 import Hero from "./Hero";
+
+
 
 export default function Home() {
   return (

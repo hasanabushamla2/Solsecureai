@@ -15,9 +15,10 @@ export const handleFund = async (
   company_wallet: string,
   challenge_pda: string,
   setOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  setLoadingFund:React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   setOpen(false);
-  const toastId = toast.loading("Transaction loading......");
+  setLoadingFund(true)
   try {
     const tx = await web3Transaction(
       WalletProvider,
@@ -25,20 +26,20 @@ export const handleFund = async (
       company_wallet,
       challenge_pda,
     );
-    toast.success("Transaction Success and funded challenge", {
-      id: toastId,
-    });
+    toast.success("Transaction Success and funded challenge");
   } catch (err) {
     if (
       err instanceof Error &&
       err?.message?.includes("User rejected the request")
     ) {
-      toast.error("Transaction Failed because user rejected ", {
-        id: toastId,
-      });
+      toast.error("Transaction Failed because user rejected ");
     } else {
-      toast.error("Transaction Failed", { id: toastId });
+      toast.error("Transaction Failed");
     }
+  }
+  finally{
+    setLoadingFund(false)
+    
   }
 };
 
@@ -48,9 +49,10 @@ export const handleClose = async (
   company_wallet: string,
   challenge_pda: string,
   setOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  setLoadingClose:React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   setOpen(false);
-  const toastId = toast.loading("Transaction loading......");
+  setLoadingClose(true)
   try {
     const tx = await closeAccount(
       WalletProvider,
@@ -58,20 +60,19 @@ export const handleClose = async (
       company_wallet,
       challenge_pda,
     );
-    toast.success("Transaction Success and closed challenge", {
-      id: toastId,
-    });
+    toast.success("Transaction Success and closed challenge");
   } catch (err) {
     if (
       err instanceof Error &&
       err?.message?.includes("User rejected the request")
     ) {
-      toast.error("Transaction Failed because user rejected ", {
-        id: toastId,
-      });
+      toast.error("Transaction Failed because user rejected ");
     } else {
-      toast.error("Transaction Failed", { id: toastId });
+      toast.error("Transaction Failed");
     }
+  }finally{
+    setLoadingClose(false)
+    
   }
 };
 
@@ -82,9 +83,10 @@ export const handlePauseOrResume = async (
   challenge_pda: string,
   pause: boolean,
   setOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  setLoadingEdit: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   setOpen(false);
-  const toastId = toast.loading("Transaction loading......");
+  setLoadingEdit(true)
   try {
     const tx = await PauseOrResumeAccount(
       WalletProvider,
@@ -94,8 +96,8 @@ export const handlePauseOrResume = async (
       pause,
     );
     toast.success(
-      `Transaction Success and ${pause === true ? "Paused" : "Activated"} challenge`,
-      { id: toastId },
+      `Transaction Success and ${pause === true ? "Paused" : "Activated"} challenge`
+   
     );
   } catch (err) {
     console.error(err);
@@ -103,12 +105,14 @@ export const handlePauseOrResume = async (
       err instanceof Error &&
       err?.message?.includes("User rejected the request")
     ) {
-      toast.error("Transaction Failed because user rejected ", {
-        id: toastId,
-      });
+      toast.error("Transaction Failed because user rejected ");
     } else {
-      toast.error("Transaction Failed", { id: toastId });
+      toast.error("Transaction Failed");
     }
+  }
+  finally{
+    setLoadingEdit(false)
+    
   }
 };
 
@@ -128,11 +132,13 @@ export const submitEdit = async (
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
   setOpen: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
+  
   try {
     setLoading(true);
     const response = await updateAPI(id, updatedFields);
     toast.success("Save edits.");
     setOpen(false)
+    
   } catch (err) {
     console.error(err)
     toast.error("Failed to edit.");
@@ -140,5 +146,6 @@ export const submitEdit = async (
     setTimeout(() => {
       setLoading(false);
     }, 800);
+    
   }
 };

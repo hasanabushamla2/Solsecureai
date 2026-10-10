@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Clock, Cpu, Server, Sparkle, User2, Wallet } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import ComponentLoading from "../layout/Loading";
 
 export default function Card() {
   
@@ -117,11 +118,14 @@ export default function Card() {
     },
   };
 
-  
+  if(isLoading){
+      return <ComponentLoading/>
+    }
     const now = new Date().getTime();
     return (
       <div className="text-foreground py-10 mt-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {challengesCash?.length === 0 && (<p className="text-foreground text-center">No data yet</p>)}
           {challengesCash &&
             challengesCash?.map((e, index) => {
               const date =
@@ -235,7 +239,7 @@ export default function Card() {
                     </p>
                   </div>
 
-                  <Link
+                  {e.status === 'active' && <Link
                     href={"/challenges"}
                     className="px-4 py-2.5 rounded-full w-full text-center text-white font-bold block transition-all duration-300 bg-[var(--btn-bg)] hover:brightness-125 hover:scale-[1.02] active:scale-[0.98]"
                     style={
@@ -246,7 +250,7 @@ export default function Card() {
                     }
                   >
                     claim
-                  </Link>
+                  </Link>}
                 </div>
               );
             })}

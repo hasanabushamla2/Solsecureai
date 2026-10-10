@@ -55,55 +55,52 @@ export function useCreateChallenge() {
   const sign = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    const toastId = toast.loading(
-      "Preparing transaction... Please confirm in your wallet.",
-    );
     if (!wallet?.publicKey) {
-      toast.error("Please connect your wallet first", { id: toastId });
+      toast.error("Please connect your wallet first");
       return;
     }
     if (!inputMintAddress) {
-      toast.error("Mint address is required", { id: toastId });
+      toast.error("Mint address is required");
       return;
     }
     if (!title || title.trim() === "") {
-      toast.error("Title is required", { id: toastId });
+      toast.error("Title is required");
       return;
     }
     if (!description || description.trim() === "") {
-      toast.error("Description is required", { id: toastId });
+      toast.error("Description is required");
       return;
     }
     if (!modelName || modelName.trim() === "") {
-      toast.error("Model name is required", { id: toastId });
+      toast.error("Model name is required");
       return;
     }
     if (!providerAI || providerAI.trim() === "") {
-      toast.error("Provider is required", { id: toastId });
+      toast.error("Provider is required");
       return;
     }
     if (!prize || Number(prize) <= 0) {
-      toast.error("Prize must be greater than 0", { id: toastId });
+      toast.error("Prize must be greater than 0");
       return;
     }
     if (!startDate || !endDate) {
-      toast.error("Dates are required", { id: toastId });
+      toast.error("Dates are required");
       return;
     }
     if (new Date(startDate) >= new Date(endDate)) {
-      toast.error("Start date must be before end date", { id: toastId });
+      toast.error("Start date must be before end date");
       return;
     }
     if (!secret || secret.trim() === "") {
-      toast.error("Secret is required", { id: toastId });
+      toast.error("Secret is required");
       return;
     }
     if (!endpoint_url || endpoint_url.trim() === "") {
-      toast.error("Endpoint URL is required", { id: toastId });
+      toast.error("Endpoint URL is required");
       return;
     }
     if (!sysProm || sysProm.trim() === "") {
-      toast.error("System Prompt is required", { id: toastId });
+      toast.error("System Prompt is required");
       return;
     }
     const provider = new AnchorProvider(connection, wallet, {
@@ -118,7 +115,7 @@ export function useCreateChallenge() {
     setTokenDecimals(mintInfo.decimals);
     setInputMintAddress(mintPublicKey.toBase58());
     if (!mintInfo) {
-      toast.error("Mint not found or invalid to fetch", { id: toastId });
+      toast.error("Mint not found or invalid to fetch");
       return;
     }
 
@@ -176,9 +173,7 @@ export function useCreateChallenge() {
       );
 
       if (result.error) {
-        toast.error("Invalid to save challenge", {
-          id: toastId,
-        });
+        toast.error("Invalid to save challenge");
         return;
       }
       setTitle("");
@@ -194,18 +189,19 @@ export function useCreateChallenge() {
       setEndpoint("");
       setSysProm("");
 
-      toast.success("Challenge created successfully on Solana Devnet!", {
-        id: toastId,
-      });
-      queryClient.invalidateQueries({ queryKey: ["challenges"] });
+      toast.success("Challenge created successfully on Solana Devnet!");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["challenges"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboardStats"] }),
+        queryClient.invalidateQueries({ queryKey: ["myChallenge"] }),
+      ]);
     } catch (error: unknown) {
       console.error(error);
       if (error instanceof Error && error.message?.includes("User rejected")) {
-        toast.error("Transaction cancelled by user.", { id: toastId });
+        toast.error("Transaction cancelled by user.");
       } else {
         toast.error(
           "Failed to create challenge. Please check your inputs and balance.",
-          { id: toastId },
         );
       }
     } finally {

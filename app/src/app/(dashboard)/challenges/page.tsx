@@ -17,7 +17,8 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Challenge } from "@/types/challenge";
 import CopyTextCard from "@/components/dashboard/challenges/CopyTextCard";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-
+import ComponentLoading from "@/components/layout/Loading";
+import ReactMarkdown from "react-markdown";
 interface statusConfig {
   bg: string;
   dot: string;
@@ -87,7 +88,6 @@ export default function page() {
     });
     return () => {
       socket?.off("dashboard:update");
-      socket.disconnect();
     };
   }, [socket]);
 
@@ -99,19 +99,14 @@ export default function page() {
       toast.success("I got the challenge claim", { id: toastId });
       queryClient.invalidateQueries({ queryKey: ["challenges"] });
       queryClient.invalidateQueries({ queryKey: ["challengesParticipants"] });
+      queryClient.invalidateQueries({ queryKey: ["challengesParticipant"] });
     } catch (err) {
       console.error(err);
       toast.error("An error occurred in the challenge claim.", { id: toastId });
     }
   };
-  const isFirstTimeLoading = isLoading || isLoadingParticipants;
-
-  if (isFirstTimeLoading) {
-    return (
-      <div className="flex justify-center items-center p-8 animate-fade-in duration-200">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-foreground" />
-      </div>
-    );
+  if (isLoading || isLoadingParticipants) {
+    return <ComponentLoading />;
   }
   return (
     <div className="mt-5 p-4">
@@ -269,7 +264,9 @@ export default function page() {
             </h2>
             <div className="text-foreground gap-2 flex flex-col">
               <p className="text-xl font-bold">{open.title}</p>
-              <p>{open.description}</p>
+              <p>
+                <ReactMarkdown>{open.description}</ReactMarkdown>
+              </p>
               <p
                 className={`flex items-center gap-2 ${statusConfig!.bg} rounded-full w-28 justify-center font-bold py-0.5 capitalize text-foreground`}
               >

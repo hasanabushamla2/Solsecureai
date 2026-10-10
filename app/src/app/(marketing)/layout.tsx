@@ -5,8 +5,14 @@ import Footer from "@/components/layout/Footer";
 import SmoothScroll from "@/components/layout/Lenis";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import QueryProvider from "@/components/layout/QueryProvider";
+import { Metadata } from "next";
 
 const queryClient = new QueryClient();
+export const metadata: Metadata = {
+  title: "SolSecureAI | Break AI. Earn on Solana.",
+  description:
+    "Explore AI security challenges, test AI models against prompt injection attacks, discover vulnerabilities, and compete for on-chain rewards on Solana.",
+};
 
 export default function MarketLayout({
   children,

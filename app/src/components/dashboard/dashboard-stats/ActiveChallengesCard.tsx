@@ -33,7 +33,7 @@ export default function ActiveChallengesCard({
     : [];
   
   return (
-    <div className="flex-1 h-full border-background/2 flex flex-col shadow-xl border-2 p-4 rounded-xl gap-3">
+    <div className="flex flex-col h-fit shadow-xl border-2 border-background/2 p-4 rounded-xl gap-3">
       <div
         className={`${!challenges && "mb-5"} w-full border-border border-b py-2 flex justify-between`}
       >
@@ -46,6 +46,7 @@ export default function ActiveChallengesCard({
           <ArrowUpRight />
         </Link>
       </div>
+      {recentChallenges.length === 0 && (<p className="text-foreground text-center">No data yet</p>)}
       {recentChallenges.map((challenge,index) => {
         const a = (amount as Amount[]).filter(
           (i) =>
@@ -56,7 +57,7 @@ export default function ActiveChallengesCard({
           <Link
             href={`/my-challenges`}
             key={challenge.challenge_pda}
-            className={`flex justify-between h-full pb-2 items-center w-full ${recentChallenges.length!==index+1 && 'border-b'} border-border`}
+            className={`flex justify-between pb-2 items-center w-full ${recentChallenges.length!==index+1 && 'border-b'} border-border`}
           >
             <div className="w-1/4 min-w-0">
               <p className="font-bold truncate">{challenge.title}</p>

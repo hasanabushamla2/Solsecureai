@@ -9,7 +9,13 @@ import SideBar from "@/components/dashboard/SideBar";
 import ContentArea from "@/components/dashboard/ContentArea";
 import { SearchProvider } from "@/components/dashboard/SearchProvider";
 import QueryProvider from "@/components/layout/QueryProvider";
+import { Metadata } from "next";
 
+export const metadata:Metadata = {
+  title: "Dashboard | SolSecureAI",
+  description:
+    "Manage your AI security challenges, track activity, monitor rewards, and explore your SolSecureAI dashboard.",
+};
 
 export default function DashboardLayout({
   children,

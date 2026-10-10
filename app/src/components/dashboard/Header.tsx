@@ -105,13 +105,15 @@ export default function Header() {
   const handleNotf = async () => {
     try {
       setTimeout(async () => {
-        if (unreadCount > 0) {
+        if (notification_count > 0) {
           const res = await postNotification();
         }
         setUnreadCount(0);
-      }, 1000);
-      queryClient.invalidateQueries({ queryKey: ["notification"] });
-      queryClient.invalidateQueries({ queryKey: ["notification_count"] });
+      }, 500);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notification"] }),
+        queryClient.invalidateQueries({ queryKey: ["notification_count"] }),
+      ]);
     } catch (err) {
       console.error(err);
     }
@@ -180,15 +182,6 @@ export default function Header() {
     }
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
-
-  const isFirstLoading = isLoading || isLoadingCount || isLoadingProfile;
-  if (isFirstLoading) {
-    return (
-      <div className="flex justify-center items-center p-8 animate-fade-in duration-200">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-foreground" />
-      </div>
-    );
-  }
   return (
     <>
       <header className="flex bg-background justify-between items-center py-2 px-5 ">
@@ -286,11 +279,10 @@ export default function Header() {
                 )}
                 {notificationCash &&
                   notificationCash?.map((e, index) => {
-                    
                     return (
                       <div
                         key={index}
-                        className={`flex flex-col justify-between py-2 border-border/50 ${!(index + 1 === notfContent.length) && "border-b"}`}
+                        className={`flex flex-col justify-between py-2`}
                       >
                         <p className="font-bold flex items-start">
                           {e.content.message || ""}

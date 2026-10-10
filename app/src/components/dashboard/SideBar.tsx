@@ -24,12 +24,12 @@ export default function SideBar(){
         <aside className={`${open? "flex":"hidden"} h-screen z-99 inset-y-0 bottom-0 shrink-0 top-0 sticky ${open?'w-full':'w-72'} gap-6 shrink-0 overflow-y-auto bg-background p-4 lg:flex flex-col justify-between`}>
             
             <div className="flex items-center gap-2 select-none justify-between">
-                <div className="flex flex-row items-center gap-2">
+                <Link href={'/'} className="flex flex-row items-center gap-2">
                     <Image src={"/icon.png"} width={40} height={40} alt="SolSecureAI Image"/>
                 <p className="text-foreground font-bold text-xl">
                     SolSecure<span className="text-transparent bg-clip-text bg-gradient-to-l from-background to-foreground pr-2">AI</span>
                 </p>
-                </div>
+                </Link>
                 <button className="font-bold flex lg:hidden" onClick={toggle}><X/></button>
             </div>
             <Menu/>

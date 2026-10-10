@@ -213,7 +213,7 @@ export async function submitSecret(
   const [challenge_pda] = PublicKey.findProgramAddressSync(
     [
       Buffer.from("challenge"),
-      new PublicKey(wallet_address).toBuffer(),
+      challengeAccount.company.toBuffer(),
       challengeAccount.id.toArrayLike(Buffer, "le", 8),
     ],
     program.programId,
@@ -259,6 +259,7 @@ export async function submitSecret(
             systemProgram: SystemProgram.programId,
         })
         .rpc();
+        
 
         const tx = await program.methods
         .revealSolution(challengeAccount.id,secret,nonce)
@@ -275,6 +276,7 @@ export async function submitSecret(
             tokenProgram: TOKEN_PROGRAM_ID,
         })
         .rpc();
+        
 
     await submitSecretChallenge(pda, tx, wallet_address);
   } catch (err) {

@@ -4,16 +4,28 @@ import { getMe } from "@/lib/auth/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function AuthGraud({ children }: { children: React.ReactNode }) {
+export default function AuthGraud({
+  children,
+  hasSession,
+}: {
+  children: React.ReactNode;
+  hasSession: boolean;
+}) {
   const [status, setStatus] = useState<"checking" | "guest" | "authenticated">(
     "checking",
   );
   const router = useRouter();
 
   useEffect(() => {
+    if (!hasSession) {
+      setStatus("guest");
+      return;
+    }
+
     const getme = async () => {
       try {
         const res = await getMe();
+
         if (res.id) {
           setStatus("authenticated");
           router.replace("/dashboard");
@@ -25,8 +37,9 @@ export default function AuthGraud({ children }: { children: React.ReactNode }) {
         console.error(err);
       }
     };
+
     void getme();
-  }, []);
+  }, [hasSession, router]);
 
   if (status === "checking" || status === "authenticated") {
     return (

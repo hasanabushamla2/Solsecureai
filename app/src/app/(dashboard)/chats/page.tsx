@@ -11,6 +11,8 @@ import "react-responsive-modal/styles.css";
 import { socket } from "@/lib/socket";
 import { useSearch } from "@/hooks/useSearch";
 import CopyTextCard from "@/components/dashboard/challenges/CopyTextCard";
+import { useQuery } from "@tanstack/react-query";
+import ComponentLoading from "@/components/layout/Loading";
 
 interface ChatSession {
   id: string;
@@ -30,31 +32,55 @@ export default function page() {
   const [copy, setCopy] = useState("");
   const [chatSessions, setChatSessions] = useState<ChatSession[] | null>(null);
   const { searchQuery } = useSearch();
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return chatSessions;
-    return chatSessions?.filter((i) => i.title.toLowerCase().includes(q));
-  }, [searchQuery, chatSessions]);
-  const fetchAPIs = async () => {
+
+  const fetchAPIs = async (): Promise<ChatSession[]> => {
     try {
       const getChallenge = await getChallengesParticipants();
-      setChallenges(getChallenge.activities);
       const res = await getChatSessions();
 
-      setChatSessions(res.result.reverse());
+      const challenges = getChallenge.activities ?? [];
+      const sessions = res.result ?? [];
+
+      return sessions
+        .map((session: ChatSession) => {
+          const challenge = challenges.find(
+            (c: ChatSession) => c.challenge_pda === session.challenge_pda,
+          );
+
+          return {
+            ...session,
+            ...challenge,
+          };
+        })
+        .reverse();
     } catch (err) {
-      console.error("Invalid to fetch api credentials");
+      console.error("Failed to fetch chat sessions", err);
+      return [];
     }
   };
+  const {
+    data: chat_sessions = [],
+    isLoading,
+    refetch,
+  } = useQuery<ChatSession[]>({
+    queryKey: ["chat_sessions"],
+    queryFn: fetchAPIs,
+  });
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return chat_sessions;
+    return chat_sessions?.filter((i) => i.title.toLowerCase().includes(q));
+  }, [searchQuery, chat_sessions]);
   useEffect(() => {
     if (socket.connected) socket.connect();
-    socket?.on("dashboard:update", fetchAPIs);
-    fetchAPIs();
+    socket?.on("dashboard:update", refetch);
     return () => {
-      socket?.off("dashboard:update", fetchAPIs);
-      socket.disconnect();
+      socket?.off("dashboard:update");
     };
   }, [socket]);
+  if (isLoading) {
+    return <ComponentLoading />;
+  }
   return (
     <div className="mt-5 p-4">
       <div className="grid grid-cols-1 gap-4 mx-auto">
@@ -70,7 +96,7 @@ export default function page() {
               <div key={`${challenge.id}-${index}`}>
                 {challenge.status === "active" ? (
                   <Link
-                    href={`/chats/challenge/${c?.challenge_pda}/c/${c?.id}/`}
+                    href={`/chats/challenge/${challenge.challenge_pda}/c/${challenge.id}/`}
                     className="bg-background backdrop-blur-md border border-border rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/30 shadow-xl group"
                   >
                     <div className="flex items-center gap-3">
@@ -139,7 +165,7 @@ export default function page() {
                     <div className="flex items-center gap-2">
                       {challenge.status === "active" && (
                         <button
-                          onClick={() => {}}
+                          
                           className="border-primary/30 px-4 bg-emerald-500/5 text-primary hover:bg-primary hover:text-white font-semibold rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all duration-300"
                         >
                           Research

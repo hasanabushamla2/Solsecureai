@@ -21,8 +21,7 @@ export default function Page() {
   const { sign, states, setters } = useCreateChallenge();
   const styleInput =
     "w-full bg-transparent text-black! peer outline-0 text-sm text-gray-400 rounded transition-all duration-200 focus:text-base focus:scale-[1.01]";
-  
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full  max-w-4xl bg-background backdrop-blur-md border-border/20 border-2 rounded-3xl p-8 shadow-[0px_0px_100px_rgba(16,185,129,0.3)]">
@@ -147,10 +146,14 @@ export default function Page() {
 
           <div className="flex justify-center mt-4">
             <button
+              disabled={states.loading}
               className="text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 font-semibold py-3 px-12 rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_25px_rgba(16,185,129,0.2)]"
               type="submit"
             >
-              Create Challenge
+              {states.loading && (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              )}
+              {states.loading ? "Creating..." : "Create Challenge"}
             </button>
           </div>
         </form>

@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Coins, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import ComponentLoading from "@/components/layout/Loading";
 
 interface Profile {
   wallet_address: string;
@@ -17,9 +18,10 @@ export default function page() {
   const [profile, setProfile] = useState<Profile>();
   const [username, setUsername] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   const getProfileRes = async () => {
     const rs = await getProfile();
+    setUsername(rs.result.username);
     return rs.result;
   };
 
@@ -36,9 +38,13 @@ export default function page() {
     socket?.on("dashboard:update", refetchProfile);
     return () => {
       socket?.off("dashboard:update");
-      socket.disconnect();
     };
-  }, [socket, getProfileRes]);
+  }, [socket]);
+  useEffect(() => {
+    if (profileCash?.username) {
+      setUsername(profileCash.username);
+    }
+  }, [profileCash]);
   const formatDate = (dateString: string | null | undefined) => {
     if (typeof dateString !== "string") return "";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -55,7 +61,10 @@ export default function page() {
       setLoading(true);
       await editProfile(username);
       toast.success("Successfully.");
-      queryClient.invalidateQueries({queryKey:['profileSettings']})
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["profileSettings"] }),
+        queryClient.invalidateQueries({ queryKey: ["profile"] }),
+      ]);
     } catch (err) {
       toast.error("Error to edit username.");
     } finally {
@@ -65,11 +74,7 @@ export default function page() {
     }
   };
   if (isLoadingCash) {
-    return (
-      <div className="flex justify-center items-center p-8 animate-fade-in duration-200">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-foreground" />
-      </div>
-    );
+    return <ComponentLoading />;
   }
   return (
     <div className="p-6 md:w-2/3 flex gap-5 flex-col max-w-7xl">
@@ -81,7 +86,7 @@ export default function page() {
         className="text-sm md:text-md w-full"
       />
       <Input
-        input={profileCash.username}
+        input={username}
         setInput={setUsername}
         label="Username"
         Icon={User}

@@ -52,7 +52,6 @@ export default function page() {
     socket?.on("dashboard:update", rLeader);
     return () => {
       socket?.off("dashboard:update");
-      socket.disconnect();
     };
   }, [socket]);
   const isFirstLoading = isLoading || isLoadingCash;
@@ -71,7 +70,7 @@ export default function page() {
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="border-y border-border text-left">
+          <thead className={` text-left`}>
             <tr>
               <th className={`font-medium text-center p-2`}>Rank</th>
               <th className={`font-medium text-center p-2`}>Wallet address</th>
@@ -81,28 +80,29 @@ export default function page() {
           </thead>
           <tbody>
             {leaderCsh &&
-              leaderCsh.map((item, index) => (
-                <tr key={item.wallet_address}>
-                  <th className={`font-medium p-2`}>{index + 1}</th>
-                  <th className={`font-medium p-2`}>{item.wallet_address}</th>
-                  <th className={`font-medium p-2`}>
-                    {Object.entries(item.total_earnings).map(
-                      ([key, value], index) => {
-                        const dec =
-                          token.find((i) => i.symbol === key)?.decimals ||
-                          9;
+              leaderCsh
+                .filter((item) => item.wins > 0)
+                .map((item, index) => (
+                  <tr key={item.wallet_address}>
+                    <th className={`font-medium p-2`}>{index + 1}</th>
+                    <th className={`font-medium p-2`}>{item.wallet_address}</th>
+                    <th className={`font-medium p-2`}>
+                      {Object.entries(item.total_earnings).map(
+                        ([key, value], index) => {
+                          const dec =
+                            token.find((i) => i.symbol === key)?.decimals || 9;
 
-                        return (
-                          <p key={`${item.wallet_address}-${index}`}>
-                            {value / 10 ** dec} {key}
-                          </p>
-                        );
-                      },
-                    )}
-                  </th>
-                  <th className={`font-medium p-2`}>{item.wins}</th>
-                </tr>
-              ))}
+                          return (
+                            <p key={`${item.wallet_address}-${index}`}>
+                              {value / 10 ** dec} {key}
+                            </p>
+                          );
+                        },
+                      )}
+                    </th>
+                    <th className={`font-medium p-2`}>{item.wins}</th>
+                  </tr>
+                ))}
           </tbody>
         </table>
       </div>

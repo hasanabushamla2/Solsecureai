@@ -9,6 +9,7 @@ import { socket } from "@/lib/socket";
 import CopyTextCard from "@/components/dashboard/challenges/CopyTextCard";
 import { useSearch } from "@/hooks/useSearch";
 import { useQuery } from "@tanstack/react-query";
+import ComponentLoading from "@/components/layout/Loading";
 interface statusConfig {
   bg: string;
   dot: string;
@@ -19,45 +20,47 @@ export default function page() {
   const [challenges, setChallenges] = useState<Challenge[]>();
   const [open, setOpen] = useState<Challenge | null>(null);
   const [copy, setCopy] = useState("");
-  const {searchQuery} = useSearch();
+  const { searchQuery } = useSearch();
+  const [loading,setLoading] = useState<boolean>(false)
 
   const fetchAPIs = async () => {
     try {
       const res = await getChallengesParticipants();
       const c = res.activities;
-      return c
+      return c;
       setChallenges(c);
-    } catch (err) {}
+    } catch (err) {
+      return [];
+    }
   };
 
-  const {data: challengesParticipant = [], isLoading, refetch: refetchChallengesParticipant} = useQuery<Challenge[]>({
-    queryKey: ['challengesParticipant'],
-    queryFn: fetchAPIs
-  })
+  const {
+    data: challengesParticipant = [],
+    isLoading,
+    refetch: refetchChallengesParticipant,
+  } = useQuery<Challenge[]>({
+    queryKey: ["challengesParticipant"],
+    queryFn: fetchAPIs,
+  });
 
-  const filter = useMemo(()=>{
-    const q = searchQuery.trim().toLowerCase()
-    if(!q) return challengesParticipant;
-    return challengesParticipant?.filter(i=>i.title.toLowerCase().includes(q))
-  },[searchQuery,challengesParticipant])
-  
+  const filter = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return challengesParticipant;
+    return challengesParticipant?.filter((i) =>
+      i.title.toLowerCase().includes(q),
+    );
+  }, [searchQuery, challengesParticipant]);
+
   useEffect(() => {
-    if(!socket.connected) socket.connect();
+    if (!socket.connected) socket.connect();
     socket?.on("dashboard:update", refetchChallengesParticipant);
     return () => {
-      socket?.off("dashboard:update", refetchChallengesParticipant);
-      socket.disconnect();
+      socket?.off("dashboard:update");
     };
   }, [socket]);
-
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-8 animate-fade-in duration-200">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-foreground" />
-      </div>
-    );
+    return <ComponentLoading />;
   }
-
   return (
     <div className="mt-5 p-4">
       <div className="grid grid-cols-1 gap-4 mx-auto">
@@ -66,7 +69,6 @@ export default function page() {
         )}
         {filter &&
           filter.map((challenge) => {
-            
             const getStatusStyle = (status: string) => {
               switch (status?.toLowerCase()) {
                 case "active":
@@ -129,7 +131,12 @@ export default function page() {
                           {challenge.challenge_pda.slice(0, 10)}...
                         </span>
                       </p>
-                      <div onClick={(e)=>{e.stopPropagation(); setOpen(null)}}>
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpen(null);
+                        }}
+                      >
                         <CopyTextCard
                           copy={copy}
                           setCopy={setCopy}
@@ -167,6 +174,7 @@ export default function page() {
             open={open}
             setOpen={setOpen}
             statusConfig={statusConfig}
+            setLoading={setLoading}
           />
         )}
       </div>

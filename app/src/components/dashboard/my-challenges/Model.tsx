@@ -85,9 +85,12 @@ export default function ModalMyChallenge({
       setLoading,
       setOpen,
     );
-    queryClient.invalidateQueries({ queryKey: ["apiSettings"] });
-    queryClient.invalidateQueries({ queryKey: ["myChallenge"] });
-    queryClient.invalidateQueries({ queryKey: ["challenges"] });
+
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["challenges"] }),
+      queryClient.invalidateQueries({ queryKey: ["dashboardStats"] }),
+      queryClient.invalidateQueries({ queryKey: ["apiSettings"] }),
+    ]);
   };
   return (
     <Modal

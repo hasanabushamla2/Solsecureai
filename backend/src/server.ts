@@ -20,6 +20,7 @@ import { createAdapter } from "@socket.io/redis-adapter";
 import Redis from "ioredis";
 
 const app = express();
+app.set("trust proxy", 1);
 
 const globalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
@@ -33,7 +34,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:3001",
+    origin: process.env.FRONTEND_URL!,
     credentials: true,
   }),
 );
@@ -1386,7 +1387,7 @@ app.post("/api/auth/nonce", challengePasswordLimiter, async (req, res) => {
   const message = [
     "Sign in to SolSecureAI",
     "",
-    "Origin: http://localhost:3000",
+    `Origin: ${process.env.FRONTEND_URL!}`,
     `Wallet: ${normalizedAddress}`,
     `Request ID: ${id}`,
     `Nonce: ${nonce}`,
@@ -1492,7 +1493,7 @@ app.post("/api/auth/verify", challengePasswordLimiter, async (req, res) => {
     const message: string = [
       "Sign in to SolSecureAI",
       "",
-      "Origin: http://localhost:3000",
+      `Origin: ${process.env.FRONTEND_URL!}`,
       `Wallet: ${walletAddressFromJson}`,
       `Request ID: ${idFromJson}`,
       `Nonce: ${nonce}`,
@@ -1566,7 +1567,7 @@ app.post("/api/auth/verify", challengePasswordLimiter, async (req, res) => {
 
     res.cookie("session_token", random, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV! === "production",
       sameSite: "strict",
       maxAge: 24 * 60 * 60 * 1000,
     });
@@ -1586,9 +1587,27 @@ app.post("/api/auth/verify", challengePasswordLimiter, async (req, res) => {
   }
 });
 
-app.get("/api/auth/me", requireAuth, (req, res) => {
+app.get("/api/auth/me", requireAuth, async (req, res) => {
   const session = res.locals.session;
-  return res.status(200).json(session);
+  if (req.query.socketTicket !== "1") {
+    return res.status(200).json(session);
+  }
+
+  try {
+    const ticket = randomBytes(32).toString("hex");
+    const ticket_hash = createHash("sha256").update(ticket).digest("hex");
+
+    await pubClient.set(`socket:ticket:${ticket_hash}`, session.id, "EX", 30);
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json({
+      ...session,
+      socketTicket: ticket,
+    });
+  } catch (err) {
+    return res.status(503).json({
+      error: "Socket authentication unavailable",
+    });
+  }
 });
 
 app.get("/api/user/profile", requireAuth, async (req, res) => {
@@ -2200,7 +2219,7 @@ app.get("/api/challenges-participants", requireAuth, async (req, res) => {
       SELECT
         c.challenge_pda, c.company_wallet, c.description, c.model_name, c.provider, c.status, c.title, ch.created_at
       FROM challenge_participants ch Join challenges c on ch.challenge_pda = c.challenge_pda
-      WHERE c.company_wallet = $1
+      WHERE ch.wallet_address = $1
       ORDER BY ch.created_at DESC
       `,
       [wallet],
@@ -2239,7 +2258,9 @@ app.post(
           error: "challenge is not active",
         });
       }
-      if (r.rows[0].company_wallet === wallet) {
+      
+      if (r.rows[0].company_wallet.toLowerCase() === wallet.toLowerCase()) {
+        
         await client.query("ROLLBACK");
         return res.status(400).json({
           error: "challenge cannot claim your challenge",
@@ -2406,15 +2427,22 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3001",
+    origin: process.env.FRONTEND_URL!,
     methods: ["GET", "POST"],
     credentials: true,
   },
   allowEIO3: true,
   transports: ["polling", "websocket"],
 });
+io.engine.on("connection_error", (err) => {
+  console.error("Engine.IO:", {
+    code: err.code,
+    message: err.message,
+    context: err.context,
+  });
+});
 
-const pubClient = new Redis("redis://127.0.0.1:6379", {
+const pubClient = new Redis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
 });
 const subClient = pubClient.duplicate();
@@ -2426,28 +2454,23 @@ io.adapter(createAdapter(pubClient, subClient));
 
 io.use(async (socket, next) => {
   try {
-    const cookieHeader = socket.handshake.headers.cookie;
-
-    if (!cookieHeader) {
-      return next(new Error("Unauthorized: No cookie found"));
+    const ticket = socket.handshake.auth.ticket;
+    console.log(ticket);
+    if (typeof ticket !== "string" || !/^[a-f0-9]{64}$/.test(ticket)) {
+      return next(new Error("Unauthorized: Invalid ticket"));
     }
 
-    const session_token = cookieHeader
-      .split(";")
-      .map((m) => m.trim())
-      .find((m) => m.startsWith("session_token"))
-      ?.slice("session_token=".length);
+    const ticketHash = createHash("sha256").update(ticket).digest("hex");
 
-    if (!session_token) {
-      return next(new Error("Unauthorized: No token found"));
+    const sessionId = await pubClient.getdel(`socket:ticket:${ticketHash}`);
+
+    if (!sessionId) {
+      return next(new Error("Unauthorized: Expired ticket"));
     }
-
-    const hash = createHash("sha256").update(session_token).digest("hex");
-
     const result = await pool.query(
       "select id, wallet_address, created_at, expires_at, revoked_at " +
-        "from auth_sessions where token_hash = $1",
-      [hash],
+        "from auth_sessions where id = $1",
+      [sessionId],
     );
 
     if (result.rows.length === 0) {

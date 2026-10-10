@@ -11,6 +11,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { Challenge } from "@/types/challenge";
 import CopyText from "../challenges/CopyText";
 import { useQueryClient } from "@tanstack/react-query";
+import { AnchorError } from "@coral-xyz/anchor";
 interface statusConfig {
   bg: string;
   dot: string;
@@ -20,10 +21,12 @@ export default function ChallengeParticipantModal({
   open,
   setOpen,
   statusConfig,
+  setLoading,
 }: {
   open: Challenge | null;
   setOpen: React.Dispatch<React.SetStateAction<Challenge | null>>;
   statusConfig: statusConfig | null;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const queryClient = useQueryClient();
   const connect = new Connection(
@@ -51,19 +54,18 @@ export default function ChallengeParticipantModal({
     wallet_address: string | PublicKey,
     challenge_pda: string,
     secret: string,
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     company_wallet?: string,
   ) => {
-    const toastId = toast.loading("Claiming .......");
+    setLoading(true);
     try {
       if (wallet_address.toString() === company_wallet) {
-        toast.error("You cannot fully challenge your own company.", {
-          id: toastId,
-        });
+        toast.error("You cannot fully challenge your own company.");
         setOpen(null);
         return;
       }
       if (secret.trim() === "") {
-        toast.error("Secret input is required.", { id: toastId });
+        toast.error("Secret input is required.");
         return;
       }
       const res = await submitSecret(
@@ -75,9 +77,20 @@ export default function ChallengeParticipantModal({
       );
       setSecret("");
       setOpen(null);
-      toast.success("I got the challenge claim", { id: toastId });
+      toast.success("I got the challenge claim");
     } catch (err) {
-      toast.error("An error occurred in the challenge claim.", { id: toastId });
+      if (err instanceof AnchorError) {
+        const errorCode = err.error.errorCode.code;
+
+        if (errorCode === "SecretUnauthorized") {
+          toast.error("Incorrect secret. Please try again.");
+          return;
+        }
+      }
+      console.error(err);
+      toast.error("An error occurred in the challenge claim.");
+    } finally {
+      setLoading(false);
     }
   };
   if (!open) return null;
@@ -199,11 +212,16 @@ export default function ChallengeParticipantModal({
               wallet?.publicKey!,
               open.challenge_pda,
               secret,
+              setLoading,
               open.company_wallet,
             );
-            queryClient.invalidateQueries({
-              queryKey: ["challengesParticipant"],
-            });
+
+            await Promise.all([
+              queryClient.invalidateQueries({
+                queryKey: ["challengesParticipant"],
+              }),
+              queryClient.invalidateQueries({ queryKey: ["dashboardStats"] }),
+            ]);
           }}
           className="text-white bg-primary float-right mt-2 font-semibold py-3 px-12 rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_25px_rgba(16,185,129,0.2)]"
           type="submit"

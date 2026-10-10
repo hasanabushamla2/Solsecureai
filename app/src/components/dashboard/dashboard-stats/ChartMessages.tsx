@@ -144,7 +144,7 @@ export default function ChartMessages({res}:{res:ChartDataPoint[]}) {
               
             />
             <YAxis
-              domain={[0, 'dataMax']}
+              domain={[0, 'dataMax+5']}
               stroke="#64748b"
               tickLine={false}
               axisLine={true}

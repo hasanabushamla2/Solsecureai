@@ -16,6 +16,7 @@ import { socket } from "@/lib/socket";
 import { useSearch } from "@/hooks/useSearch";
 import CopyTextCard from "@/components/dashboard/challenges/CopyTextCard";
 import { useQuery } from "@tanstack/react-query";
+import ComponentLoading from "@/components/layout/Loading";
 
 interface BillHistory {
   id: string;
@@ -32,7 +33,8 @@ type SortKey = "date" | "amount";
 const PAGE_SIZE = 10;
 const darkBtn =
   "rounded-xl bg-foreground px-2 py-1 text-background hover:bg-foreground/90";
-const navBtn = "transition-all hover:text-foreground/50 disabled:opacity-30 flex flex-row";
+const navBtn =
+  "transition-all hover:text-foreground/50 disabled:opacity-30 flex flex-row";
 const td = "px-4 py-4";
 
 const SortIcon = ({ active, asc }: { active: boolean; asc: boolean }) =>
@@ -57,35 +59,37 @@ export default function BillingPage() {
   const [open, setOpen] = useState<"date" | "filter" | null>(null);
   const [panelKey, setPanelKey] = useState(0);
   const { searchQuery } = useSearch();
-  const [copy,setCopy] = useState('')
+  const [copy, setCopy] = useState("");
 
-  const getBillingFun = async ()=>{
+  const getBillingFun = async () => {
     try {
       const res = await getBilling();
       return res.billingHistory;
+    } catch (err) {
+      console.error(err);
+      return [];
     }
-    catch(err) {
-      console.error(err)
-      return []
-    }
-  }
+  };
 
-  const {data: allCash = [],isLoading,refetch:refetchAllCash} = useQuery<BillHistory[]>({
+  const {
+    data: allCash = [],
+    isLoading,
+    refetch: refetchAllCash,
+  } = useQuery<BillHistory[]>({
     queryKey: ["billHistory"],
-    queryFn: getBillingFun
-  })
+    queryFn: getBillingFun,
+  });
 
   useEffect(() => {
     if (!socket.connected) socket.connect();
     socket?.on("dashboard:update", refetchAllCash);
     return () => {
       socket?.off("dashboard:update");
-      socket.disconnect();
     };
   }, [socket]);
 
   const rows = useMemo(() => {
-    if(allCash.length === 0)return;
+    if (allCash.length === 0) return;
     const time = (r: BillHistory) => new Date(r.date).getTime();
     const value = (r: BillHistory) => r.amount / 10 ** r.token_decimals;
     const [from, to] = applied;
@@ -105,19 +109,22 @@ export default function BillingPage() {
       );
   }, [allCash, type, applied, sort]);
 
-  const filterSearch: BillHistory[]|undefined = useMemo(() => {
-    if(rows?.length===0)return;
+  const filterSearch: BillHistory[] | undefined = useMemo(() => {
+    if (rows?.length === 0) return;
     const q = searchQuery.trim().toLowerCase();
-    if(!q) return rows;
-    return rows?.filter(i=>(i.challenge_pda.toLowerCase().includes(q)))
+    if (!q) return rows;
+    return rows?.filter((i) => i.challenge_pda.toLowerCase().includes(q));
   }, [searchQuery, rows]);
   useEffect(() => {
-  setPage(1);
-}, [searchQuery]);
+    setPage(1);
+  }, [searchQuery]);
 
   const pages = Math.max(1, Math.ceil((filterSearch?.length || 0) / PAGE_SIZE));
   const current = Math.min(page, pages);
-  const visible = filterSearch?.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+  const visible = filterSearch?.slice(
+    (current - 1) * PAGE_SIZE,
+    current * PAGE_SIZE,
+  );
   const isFiltered = type !== "all" || applied[0] || applied[1];
   const toggleSort = (key: SortKey) => {
     setSort((s) => ({ key, asc: s.key === key ? !s.asc : true }));
@@ -168,30 +175,24 @@ export default function BillingPage() {
     </th>
   );
 
-  const getDynamic=(currentPage:number)=>{
-    let size=4;
-    let start = currentPage===1 ? currentPage: currentPage-1;
+  const getDynamic = (currentPage: number) => {
+    let size = 4;
+    let start = currentPage === 1 ? currentPage : currentPage - 1;
 
-    if(start + size-1 > pages){
-      start = Math.max(1,pages -size+1);
+    if (start + size - 1 > pages) {
+      start = Math.max(1, pages - size + 1);
     }
-    if(pages>4){
-    const a =Array.from({length: size},(_,index)=>index+start);
-    return a}
-    else{
-      const a =Array.from({length: pages},(_,index)=>index+start);
-    return a
+    if (pages > 4) {
+      const a = Array.from({ length: size }, (_, index) => index + start);
+      return a;
+    } else {
+      const a = Array.from({ length: pages }, (_, index) => index + start);
+      return a;
     }
-  }
-
+  };
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-8 animate-fade-in duration-200">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-foreground" />
-      </div>
-    );
+    return <ComponentLoading />;
   }
-
   return (
     <div className="m-6 rounded-2xl border border-border">
       <div className="flex items-center justify-between p-5">
@@ -255,7 +256,7 @@ export default function BillingPage() {
             </tr>
           </thead>
           <tbody>
-            {visible?.length === 0 && (
+            {(visible === undefined || visible.length === 0) && (
               <tr>
                 <td
                   colSpan={5}
@@ -267,7 +268,10 @@ export default function BillingPage() {
             )}
             {visible?.map((b) => (
               <tr key={b.id} className="border-b border-border">
-                <td className={td}>{b.id.slice(0, 10)}... <CopyTextCard copy={copy} setCopy={setCopy} content={b.id}/></td>
+                <td className={td}>
+                  {b.id.slice(0, 10)}...{" "}
+                  <CopyTextCard copy={copy} setCopy={setCopy} content={b.id} />
+                </td>
                 <td className={td}>
                   {b.amount / 10 ** b.token_decimals} {b.token_symbol}
                 </td>
@@ -297,9 +301,7 @@ export default function BillingPage() {
           <ChevronLeft />
         </button>
         <div className="flex gap-2 text-foreground/50">
-          {
-          
-        getDynamic(current).map((k) => (
+          {getDynamic(current).map((k) => (
             <button
               key={k}
               onClick={() => setPage(k)}
@@ -308,9 +310,8 @@ export default function BillingPage() {
               {k}
             </button>
           ))}
-          
         </div>
-        
+
         <button
           aria-label="Next page"
           disabled={current === pages}

@@ -66,15 +66,6 @@ export interface ChartDataPoint {
 }
 
 export default function CardStatistics() {
-  const [stats, setStats] = useState<Stats>();
-  const [chats, setChat] = useState<Chats | null>(null);
-  const [activity, setActivity] = useState<
-    { activities: MyActivity[] } | undefined
-  >(undefined);
-  const [myChallenges, setMyChallenges] = useState<MyChallenges[] | null>(null);
-  const [amount, setAmount] = useState<Amount[]>();
-  const [count, setCount] = useState<ChartDataPoint[]>([]);
-  const [countMessage, setCountMessage] = useState<ChartDataPoint[]>([]);
   const getFun = async () => {
     try {
       const [
@@ -94,14 +85,6 @@ export default function CardStatistics() {
         getCountRes("7D"),
         getAnalyticsMessage("7D"),
       ]);
-
-      /*setActivity(activityRes);
-      setChat(chatsRes);
-      setStats(statsRes);
-      setMyChallenges(myChallengesRes);
-      if (getBillingRes.billingHistory) setAmount(getBillingRes.billingHistory);
-      if (getCountR) setCount(getCountR as ChartDataPoint[]);
-      setCountMessage(getMessageR);*/
       return {
         activity: activityRes,
         chats: chatsRes,
@@ -109,25 +92,29 @@ export default function CardStatistics() {
         myChallenges: myChallengesRes,
         amount: getBillingRes.billingHistory,
         count: getCountR,
-        countMessage:getMessageR,
-      }
+        countMessage: getMessageR,
+      };
     } catch (err) {
       console.error("Failed to fetch statistics");
       return {};
     }
   };
-  
-  const { data: statsCash, isLoading, refetch } = useQuery({
+
+  const {
+    data: statsCash,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["dashboardStats"],
     queryFn: getFun,
   });
 
   useEffect(() => {
-    if(!socket.connected) socket.connect;
-    socket?.on('dashboard:update',refetch)
+    socket?.on("dashboard:update", refetch);
+
+    if (!socket.connected) socket.connect();
     return () => {
       socket?.off("dashboard:update");
-      socket.disconnect();
     };
   }, [socket]);
   return (
@@ -136,18 +123,21 @@ export default function CardStatistics() {
         <TotalChallengesCard
           chats={statsCash?.chats || []}
           stats={statsCash?.stats || []}
-          challenges={statsCash?.myChallenges||[]}
+          challenges={statsCash?.myChallenges || []}
         />
-        <ActiveChallengesCard amount={statsCash?.amount || []} challenges={statsCash?.myChallenges||[]} />
+        <ActiveChallengesCard
+          amount={statsCash?.amount || []}
+          challenges={statsCash?.myChallenges || []}
+        />
         <div className="flex flex-col md:flex-row gap-5">
           <Chart res={statsCash?.count || []} />
-          <ChartMessages res={statsCash?.countMessage||[]} />
+          <ChartMessages res={statsCash?.countMessage || []} />
         </div>
       </div>
       <div className="xl:col-span-4 flex flex-col gap-4">
         <UserWalletCard />
-        <RecentActivityCard activity={statsCash?.activity?.activities||[]} />
-        <ChartFunds amount={statsCash?.amount||[]} />
+        <RecentActivityCard activity={statsCash?.activity?.activities || []} />
+        <ChartFunds amount={statsCash?.amount || []} />
       </div>
     </div>
   );

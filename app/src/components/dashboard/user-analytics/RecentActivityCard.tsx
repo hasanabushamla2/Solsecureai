@@ -30,8 +30,9 @@ export default function RecentActivityCard({
       >
         <p className="font-bold">Recent Activities</p>
       </div>
-
+      
       <div className="flex flex-col justify-center items-center">
+        {recentActivity.length === 0 &&<p className="text-foreground text-center">No data yet</p>}
         {recentActivity.map((activity: MyActivity) => {
           const config = activityConfig[activity.activity_type] || {
             icon: "📝",

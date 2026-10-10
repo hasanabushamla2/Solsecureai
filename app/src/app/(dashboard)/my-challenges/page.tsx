@@ -16,6 +16,7 @@ import { socket } from "@/lib/socket";
 import CopyTextCard from "@/components/dashboard/challenges/CopyTextCard";
 import { useSearch } from "@/hooks/useSearch";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import ComponentLoading from "@/components/layout/Loading";
 
 export default function page() {
   const walletProvider = useAnchorWallet();
@@ -27,6 +28,9 @@ export default function page() {
   const [copy, setCopy] = useState("");
   const { searchQuery } = useSearch();
   const queryClient = useQueryClient();
+  const [loadingFund, setLoadingFund] = useState<boolean>(false);
+  const [loadingEdit, setLoadingEdit] = useState<boolean>(false);
+  const [loadingClose, setLoadingClose] = useState<boolean>(false);
 
   const fetchAPIs = async () => {
     try {
@@ -42,7 +46,7 @@ export default function page() {
 
   const {
     data: MyChallengesCash = [],
-    isLoading:isLoadingCash,
+    isLoading: isLoadingCash,
     refetch: refetchAPIs,
   } = useQuery<Challenge[]>({
     queryKey: ["myChallenge"],
@@ -55,7 +59,7 @@ export default function page() {
   }, [searchQuery, MyChallengesCash]);
 
   useEffect(() => {
-    if (!socket.connected) socket.connect();
+    
     const tryconnect = async () => {
       try {
         const tx = await connect();
@@ -65,25 +69,22 @@ export default function page() {
     };
     tryconnect();
     socket?.on("dashboard:update", refetchAPIs);
-
+    if (!socket.connected) socket.connect();
     return () => {
-      socket?.off("dashboard:update", refetchAPIs);
-      socket.disconnect();
+      socket?.off("dashboard:update");
     };
   }, [socket]);
-
   if (isLoadingCash) {
-    return (
-      <div className="flex justify-center items-center p-8 animate-fade-in duration-200">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-foreground" />
-      </div>
-    );
+    return <ComponentLoading />;
   }
   return (
     <div className="mt-5 p-4">
       <div className="grid grid-cols-1 gap-4 mx-auto">
+        {filtered.length === 0 && (
+          <p className="text-foreground text-center">No data yet</p>
+        )}
         {filtered ? (
-          filtered.map((my) => {
+          filtered?.map((my) => {
             const getStatusStyle = (status: string) => {
               switch (status?.toLowerCase()) {
                 case "active":
@@ -169,8 +170,16 @@ export default function page() {
                     my.status === "active" ||
                     my.status === "paused") && (
                     <button
-                      onClick={ () => {
+                      onClick={async() => {
                         handleEdit(my, setOpen, setChallenge);
+                        await Promise.all([
+                          queryClient.invalidateQueries({
+                            queryKey: ["challenges"],
+                          }),
+                          queryClient.invalidateQueries({
+                            queryKey: ["dashboardStats"],
+                          }),
+                          ]);
                       }}
                       className="text-[11px] px-2.5 py-1 rounded-full font-medium border border-border/10 flex items-center gap-1.5 shadow-sm text-primary bg-background/5 hover:scale-105 transition-all ease-in-out duration-300 hover:text-primary hover:border-primary"
                     >
@@ -179,6 +188,7 @@ export default function page() {
                   )}
                   {my.status === "draft" && (
                     <button
+                      disabled={loadingFund}
                       onClick={async () => {
                         await handleFund(
                           walletProvider!,
@@ -186,17 +196,30 @@ export default function page() {
                           my.company_wallet,
                           my.challenge_pda,
                           setOpen,
+                          setLoadingFund,
                         );
-                        queryClient.invalidateQueries({queryKey:['challenges']})
-                        queryClient.invalidateQueries({queryKey:['myChallenge']})
+
+                        await Promise.all([
+                          queryClient.invalidateQueries({
+                            queryKey: ["challenges"],
+                          }),
+                          queryClient.invalidateQueries({
+                            queryKey: ["dashboardStats"],
+                          }),
+                          
+                        ]);
                       }}
                       className="text-[11px] px-2.5 py-1 rounded-full font-medium border border-border/10 flex items-center gap-1.5 shadow-sm text-primary bg-background/5 hover:scale-105 transition-all ease-in-out duration-300 hover:text-primary hover:border-primary"
                     >
-                      Fund
+                      {loadingFund && (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      )}
+                      {loadingFund ? "Funding..." : "Fund"}
                     </button>
                   )}
                   {(my.status === "active" || my.status === "paused") && (
                     <button
+                      disabled={loadingEdit}
                       onClick={async () => {
                         await handlePauseOrResume(
                           walletProvider!,
@@ -205,19 +228,37 @@ export default function page() {
                           my.challenge_pda,
                           my.status === "active" ? true : false,
                           setOpen,
+                          setLoadingEdit,
                         );
-                        queryClient.invalidateQueries({queryKey:['challenges']})
-                        queryClient.invalidateQueries({queryKey:['myChallenge']})
+                        await Promise.all([
+                          queryClient.invalidateQueries({
+                            queryKey: ["challenges"],
+                          }),
+                          queryClient.invalidateQueries({
+                            queryKey: ["dashboardStats"],
+                          }),
+                          
+                        ]);
                       }}
                       className="text-[11px] px-2.5 py-1 rounded-full font-medium border border-border/10 flex items-center gap-1.5 shadow-sm text-primary bg-background/5 hover:scale-105 transition-all ease-in-out duration-300 hover:text-primary hover:border-primary"
                     >
-                      {my.status === "paused" ? "Resume" : "Paused"}
+                      {loadingEdit && (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      )}
+                      {my.status === "paused"
+                        ? loadingEdit
+                          ? "Resume..."
+                          : "Resume"
+                        : loadingEdit
+                          ? "Pause..."
+                          : "Pause"}
                     </button>
                   )}
                   {(my.status === "active" ||
                     my.status === "paused" ||
                     my.status === "draft") && (
                     <button
+                      disabled={loadingClose}
                       onClick={async () => {
                         await handleClose(
                           walletProvider!,
@@ -225,13 +266,24 @@ export default function page() {
                           my.company_wallet,
                           my.challenge_pda,
                           setOpen,
+                          setLoadingClose,
                         );
-                        queryClient.invalidateQueries({queryKey:['challenges']})
-                        queryClient.invalidateQueries({queryKey:['myChallenge']})
+                        await Promise.all([
+                          queryClient.invalidateQueries({
+                            queryKey: ["challenges"],
+                          }),
+                          queryClient.invalidateQueries({
+                            queryKey: ["dashboardStats"],
+                          }),
+                          
+                        ]);
                       }}
                       className="text-[11px] px-2.5 py-1 rounded-full font-medium border border-border/10 flex items-center gap-1.5 shadow-sm text-primary bg-background/5 hover:scale-105 transition-all ease-in-out duration-300 hover:text-primary hover:border-primary"
                     >
-                      Close
+                      {loadingClose && (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      )}
+                      {loadingClose ? "Closing..." : "Close"}
                     </button>
                   )}
                 </div>

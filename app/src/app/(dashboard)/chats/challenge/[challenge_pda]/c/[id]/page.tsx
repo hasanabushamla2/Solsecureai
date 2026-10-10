@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { socket } from "@/lib/socket";
 import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
+import ComponentLoading from "@/components/layout/Loading";
 
 interface Message {
   id: string;
@@ -24,6 +25,7 @@ export default function page() {
   const sessionId = params.id;
   const ch = params.challenge_pda;
   const queryClient = useQueryClient();
+  const [error, setError] = useState();
 
   const streamingref = useRef("");
   const [streamingText, setStreamingText] = useState("");
@@ -39,7 +41,7 @@ export default function page() {
       return res.result;
     } catch (e) {
       console.error(e);
-      return e;
+      return [];
     }
   };
 
@@ -52,57 +54,85 @@ export default function page() {
     queryFn: fetchMessages,
   });
 
+  const scrollToBottom = () => {
+    messageRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
-    if (!socket?.connected) socket?.connect();
-
-    socket?.on("connect", () => {
-      socket?.emit("chat:join", sessionId);
+    const onConnectError = (error: Error) => {
+      console.error("Socket connection failed:", error.message);
+    };
+    const onConnect = () => {
+      socket.emit("chat:join", sessionId);
       refetch();
-    });
-    socket?.on("chat:message", (data) => {
+    };
+    const onMessage = async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["messages"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboardStats"] }),
+      ]);
       refetch();
-    });
-    socket?.on("chat:error", (error) => {
+    };
+    const onError = async (error: any) => {
       console.error("Failed send to AI");
+      setLoading(false);
+      setLoadingThink(false);
+      send.current = false;
+      streamingref.current = "";
+      setError(error);
       refetch();
-    });
-
-    socket?.on("chat:chunk", (chunk: { text: string }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["messages"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboardStats"] }),
+      ]);
+    };
+    const onChunk = async (chunk: { text: string }) => {
       setLoading(true);
-
       streamingref.current += chunk.text;
       setStreamingText(streamingref.current);
-
-      const timerScroll = setTimeout(() => {
-        messageRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    });
-
-    socket?.on("chat:done", async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["messages"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboardStats"] }),
+      ]);
+    };
+    const onDone = async () => {
       refetch();
       streamingref.current = "";
-
       send.current = false;
       setLoadingThink(false);
       setLoading(false);
-      queryClient.invalidateQueries({ queryKey: ["message"] });
-    });
-    return () => {
-      socket?.off("chat:chunk");
-      socket?.off("chat:done");
-      socket?.disconnect();
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["messages"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboardStats"] }),
+      ]);
     };
-  }, [params.id, socket]);
+
+    socket.on("connect_error", onConnectError);
+    socket.on("connect", onConnect);
+    socket.on("chat:message", onMessage);
+    socket.on("chat:error", onError);
+    socket.on("chat:chunk", onChunk);
+    socket.on("chat:done", onDone);
+
+    if (!socket.connected) socket.connect();
+
+    return () => {
+      socket.off("connect_error", onConnectError);
+      socket.off("connect", onConnect);
+      socket.off("chat:message", onMessage);
+      socket.off("chat:error", onError);
+      socket.off("chat:chunk", onChunk);
+      socket.off("chat:done", onDone);
+    };
+  }, [sessionId]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      messageRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+    const t = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(t);
+  }, [messagesCash, streamingText, loadingThink]);
 
-    return () => clearTimeout(timer);
-  }, [messageText, send]);
-
-  const handleSend = (e?: React.FormEvent<HTMLFormElement>) => {
+  const handleSend = async (e?: React.FormEvent<HTMLFormElement>) => {
     if (e) e.preventDefault();
     if (!messageText.trim() || !socket) return;
     if (send.current) return;
@@ -118,41 +148,53 @@ export default function page() {
     streamingref.current = "";
     setStreamingText("");
     setLoadingThink(true);
-    queryClient.invalidateQueries({ queryKey: ["message"] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["messages"] }),
+      queryClient.invalidateQueries({ queryKey: ["dashboardStats"] }),
+    ]);
   };
+  if (isLoading) {
+    return <ComponentLoading />;
+  }
   return (
     <div className="flex items-center justify-center px-2 ">
       <div className="flex justify-center relative border-border/50 overflow-y-auto border-2 flex-col bg-muted/2 w-full md:w-1/2 h-[calc(100vh-90px)] mt-2 rounded-3xl shadow-[0px_0px_20px_15px_rgba(100,100,100,0.15)] z-50">
         <p className="text-foreground text-center font-bold py-2">Chat</p>
         <div className="h-11/12 p-5 overflow-x-hidden [mask-composite:intersect] [mask-image:linear-gradient(to_bottom,transparent_0%,white_48px,white_100%),linear-gradient(to_top,transparent_0%,white_48px,white_100%)] text-foreground flex flex-col w-full gap-2 overflow-y-auto">
-          {messagesCash &&
-            messagesCash?.map((m, index) => {
-              if (m.role === "user") {
-                return (
-                  <div
-                    key={index}
-                    dir="auto"
-                    className="text-white break-words whitespace-pre-wrap"
-                  >
-                    <div className="prose dark:prose-invert max-w-none bg-primary rounded-xl px-2 w-fit">
-                      <ReactMarkdown>{m.content}</ReactMarkdown>
+          <AnimatePresence>
+            {messagesCash &&
+              messagesCash?.map((m, index) => {
+                if (m.role === "user") {
+                  return (
+                    <motion.div
+                      key={m.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.55 }}
+                      dir="auto"
+                      className="text-white break-words whitespace-pre-wrap"
+                    >
+                      <div className="prose dark:prose-invert max-w-none bg-primary rounded-xl px-2 w-fit">
+                        <ReactMarkdown>{m.content}</ReactMarkdown>
+                      </div>
+                    </motion.div>
+                  );
+                } else {
+                  return (
+                    <div
+                      key={index}
+                      dir="auto"
+                      className="break-words whitespace-pre-wrap rounded-xl"
+                    >
+                      <div className="prose dark:prose-invert max-w-none">
+                        <ReactMarkdown>{m.content}</ReactMarkdown>
+                      </div>
                     </div>
-                  </div>
-                );
-              } else {
-                return (
-                  <div
-                    key={index}
-                    dir="auto"
-                    className="break-words whitespace-pre-wrap rounded-xl"
-                  >
-                    <div className="prose dark:prose-invert max-w-none">
-                      <ReactMarkdown>{m.content}</ReactMarkdown>
-                    </div>
-                  </div>
-                );
-              }
-            })}
+                  );
+                }
+              })}
+          </AnimatePresence>
           <AnimatePresence>
             {loading && (
               <>
@@ -191,6 +233,25 @@ export default function page() {
               <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
               <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
               <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce"></div>
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
+              <svg
+                className="w-4 h-4 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+
+              <span>Failed to send. Please try again.</span>
             </div>
           )}
           <div ref={messageRef} />
